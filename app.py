@@ -144,24 +144,40 @@ if "meal_type" not in st.session_state:
 
 # HTML 파일을 읽어서 iframe으로 표시하는 함수
 def display_html_in_iframe():
-    if os.path.exists(HTML_FILE):
-        with open(HTML_FILE, 'r', encoding='utf-8') as f:
-            html_content = f.read()
-        
-        # HTML을 base64로 인코딩
-        b64 = base64.b64encode(html_content.encode()).decode()
-        
-        # iframe으로 표시
-        iframe_html = f"""
-        <iframe src="data:text/html;base64,{b64}" 
-                width="100%" 
-                height="800" 
-                style="border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-        </iframe>
-        """
-        st.components.v1.html(iframe_html, height=800, scrolling=True)
-    else:
+    html_path = "index.html"  # 지금 쓰시는 경로
+    if not os.path.exists(html_path):
         st.error("⚠️ index.html 파일을 찾을 수 없습니다. 파일을 같은 디렉토리에 배치해주세요.")
+        return
+
+    # 1) HTML 읽기
+    try:
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+    except:
+        with open(html_path, 'r', encoding='cp949', errors='ignore') as f:
+            html_content = f.read()
+
+    # 2) Excel 후보 경로 중 존재하는 것 선택
+    xlsx_candidates = [
+        "menu.xlsx",
+        "/mnt/data/menu.xlsx",
+        "/mnt/data/정선_음식 데이터_간식제외.xlsx"
+    ]
+    xlsx_path = next((p for p in xlsx_candidates if os.path.exists(p)), None)
+
+    # 3) base64로 주입 스크립트 생성
+    inject_script = ""
+    if xlsx_path:
+        with open(xlsx_path, "rb") as xf:
+            b64 = base64.b64encode(xf.read()).decode()
+        inject_script = f"<script>window.__XLSX_BASE64__='{b64}';</script>"
+    else:
+        # 주입이 없으면 null로 선언 (HTML이 fetch()로 폴백)
+        inject_script = "<script>window.__XLSX_BASE64__=null;</script>"
+
+    # 4) 주입 스크립트 + 기존 HTML을 합쳐서 iframe 렌더
+    final_html = inject_script + html_content
+    st.components.v1.html(final_html, height=900, scrolling=True)
 
 # 사이드바 - 탭 선택
 with st.sidebar:
