@@ -17,8 +17,6 @@ def render_index_html_with_injected_xlsx(
     if xlsx_candidates is None:
         xlsx_candidates = [
             "menu.xlsx",
-            "/mnt/data/menu.xlsx",
-            "/mnt/data/정선_음식 데이터_간식제외.xlsx",
         ]
 
     # 1) HTML 본문 준비 (파일 경로가 주어지면 파일 사용, 아니면 내장 문자열 사용)
@@ -387,4 +385,5 @@ INDEX_HTML = r"""<!DOCTYPE html>
 # ==============================
 # ↑↑↑ index.html 본문 끝 ↑↑↑
 # ==============================
+
 
