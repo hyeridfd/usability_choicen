@@ -1,4 +1,57 @@
-<!DOCTYPE html>
+import os, base64
+import streamlit as st
+import streamlit.components.v1 as components
+
+def render_index_html_with_injected_xlsx(
+    html_height: int = 900,
+    xlsx_candidates=None,
+    html_file_path: str | None = None,
+):
+    """
+    index.html 내용을 파이썬 문자열(INDEX_HTML)로 포함하고,
+    존재하는 엑셀을 base64로 주입하여 Streamlit에서 바로 렌더합니다.
+
+    - html_file_path 를 주면, 내부 문자열 대신 해당 파일 내용을 사용합니다(선택).
+    - xlsx_candidates 순서대로 존재여부를 확인해 첫 번째 파일을 주입합니다.
+    """
+    if xlsx_candidates is None:
+        xlsx_candidates = [
+            "menu.xlsx",
+            "/mnt/data/menu.xlsx",
+            "/mnt/data/정선_음식 데이터_간식제외.xlsx",
+        ]
+
+    # 1) HTML 본문 준비 (파일 경로가 주어지면 파일 사용, 아니면 내장 문자열 사용)
+    if html_file_path and os.path.exists(html_file_path):
+        try:
+            with open(html_file_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+        except Exception:
+            with open(html_file_path, "r", encoding="cp949", errors="ignore") as f:
+                html_content = f.read()
+    else:
+        html_content = INDEX_HTML  # 아래에 정의된 전체 HTML 문자열
+
+    # 2) 엑셀 후보 중 첫 번째 존재 파일을 base64 인코딩
+    xlsx_path = next((p for p in xlsx_candidates if os.path.exists(p)), None)
+    if xlsx_path:
+        with open(xlsx_path, "rb") as xf:
+            b64 = base64.b64encode(xf.read()).decode()
+        inject_script = f"<script>window.__XLSX_BASE64__='{b64}';</script>"
+    else:
+        # 주입 없음 → HTML 내부에서 fetch() 경로로 폴백
+        inject_script = "<script>window.__XLSX_BASE64__=null;</script>"
+
+    # 3) 주입 스크립트 + HTML 합치기 후 렌더
+    final_html = inject_script + html_content
+    components.html(final_html, height=html_height, scrolling=True)
+
+
+# ==============================
+# ↓↓↓ 여기부터 index.html 본문 ↓↓↓
+# (주입(base64) 모드 + fetch 폴백 모두 지원)
+# ==============================
+INDEX_HTML = r"""<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -105,44 +158,47 @@
     </div>
   </div>
 
-  <!-- SheetJS (XLSX 파서) -->
+  <!-- Streamlit이 넣어준 전역 주입값을 사용할 준비 -->
   <script>
-  // Streamlit에서 주입해줄 예정인 전역 변수 (없으면 null)
-  const INJECTED_XLSX_BASE64 = window.__XLSX_BASE64__ || null;
+    // Streamlit에서 window.__XLSX_BASE64__ 로 주입됨(없으면 null)
+    const INJECTED_XLSX_BASE64 = (typeof window !== 'undefined' && window.__XLSX_BASE64__) ? window.__XLSX_BASE64__ : null;
   </script>
+
+  <!-- SheetJS (XLSX 파서) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
     let allMenuData = [];     // 전체 데이터
     let currentCategory = 'all';
 
-    // XLSX 경로 (Netlify 정적 배포용)
+    // XLSX 경로(정적 배포 시 사용) — Streamlit 주입이 없으면 사용됨
     const PRIMARY_XLSX  = './menu.xlsx';
-    const FALLBACK_XLSX = encodeURI('./정선_음식 데이터_간식제외.xlsx'); // 필요시 한글 파일명 대비
+    const FALLBACK_XLSX = encodeURI('./정선_음식 데이터_간식제외.xlsx');
 
     document.addEventListener('DOMContentLoaded', loadData);
 
-    function loadData() {
+    async function loadData() {
+      // ✅ 1순위: Streamlit이 주입한 base64 엑셀
       if (INJECTED_XLSX_BASE64) {
-      try {
-        const binary = atob(INJECTED_XLSX_BASE64);
-        const len = binary.length;
-        const u8 = new Uint8Array(len);
-        for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
-        const wb  = XLSX.read(u8, { type: 'array' });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-        hydrateData(data);
-        return;
-      } catch (e) {
-        console.warn('Injected base64 parse failed, fallback to fetch()', e);
+        try {
+          const binary = atob(INJECTED_XLSX_BASE64);
+          const len = binary.length;
+          const u8 = new Uint8Array(len);
+          for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
+          const wb  = XLSX.read(u8, { type: 'array' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+          hydrateData(data);
+          return;
+        } catch (e) {
+          console.warn('Injected base64 parse failed, fallback to fetch()', e);
+        }
       }
-    }
 
-    // ✅ 2순위: 기존 방식 (정적 파일을 네트워크로 fetch)
-    headExists(PRIMARY_XLSX).then(ok => ok ? parseXlsx(PRIMARY_XLSX)
-      : headExists(FALLBACK_XLSX).then(ok2 => ok2 ? parseXlsx(FALLBACK_XLSX)
-      : showError('XLSX 파일을 찾을 수 없습니다. menu.xlsx를 올렸는지 확인하세요.')));
-  }
+      // ✅ 2순위: 기존 방식(fetch)
+      headExists(PRIMARY_XLSX).then(ok => ok ? parseXlsx(PRIMARY_XLSX)
+        : headExists(FALLBACK_XLSX).then(ok2 => ok2 ? parseXlsx(FALLBACK_XLSX)
+        : showError('XLSX 파일을 찾을 수 없습니다. menu.xlsx를 올렸는지 확인하세요.')));
+    }
 
     function headExists(url) {
       return fetch(url, { method: 'HEAD' }).then(res => res.ok).catch(() => false);
@@ -155,26 +211,29 @@
         const wb  = XLSX.read(buf, { type: 'array' });
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
-        // 컬럼 매핑 (헤더명은 정확히 아래와 같아야 함)
-        allMenuData = data.map(r => ({
-          menu:   (r['Menu'] ?? '').toString().trim(),
-          category: (r['Category'] ?? '').toString().trim(),
-          code:   (r['음식 분류코드'] ?? '').toString().trim(),
-          large:  (r['대분류'] ?? '').toString().trim(),
-          middle: (r['중분류'] ?? '').toString().trim(),
-          cook:   (r['조리법 유형'] ?? '').toString().trim()
-        })).filter(x => x.menu);
-
-        document.getElementById('totalCount').textContent = allMenuData.length.toLocaleString();
-
-        // 초기 렌더: 전체
-        setActiveCategoryButton('all');
-        toggleAdvancedFilters(false);
-        renderTable(allMenuData);
+        hydrateData(data);
       } catch (err) {
         showError('XLSX를 불러오지 못했습니다: ' + err);
       }
+    }
+
+    function hydrateData(data) {
+      // 컬럼 매핑 (헤더명은 정확히 아래와 같아야 함)
+      allMenuData = data.map(r => ({
+        menu:   (r['Menu'] ?? '').toString().trim(),
+        category: (r['Category'] ?? '').toString().trim(),
+        code:   (r['음식 분류코드'] ?? '').toString().trim(),
+        large:  (r['대분류'] ?? '').toString().trim(),
+        middle: (r['중분류'] ?? '').toString().trim(),
+        cook:   (r['조리법 유형'] ?? '').toString().trim()
+      })).filter(x => x.menu);
+
+      document.getElementById('totalCount').textContent = allMenuData.length.toLocaleString();
+
+      // 초기 렌더: 전체
+      setActiveCategoryButton('all');
+      toggleAdvancedFilters(false);
+      renderTable(allMenuData);
     }
 
     function setActiveCategoryButton(cat) {
@@ -189,12 +248,11 @@
       currentCategory = cat;
       setActiveCategoryButton(cat);
 
-      // 카테고리별로 드롭다운 노출/갱신
       if (cat === 'all') {
         toggleAdvancedFilters(false);
       } else {
         toggleAdvancedFilters(true);
-        populateAdvancedOptions(); // 현재 카테고리 기준 옵션 초기화 + 계산
+        populateAdvancedOptions();
       }
       applyAllFilters();
     }
@@ -325,6 +383,8 @@
   </script>
 </body>
 </html>
-
-
+"""
+# ==============================
+# ↑↑↑ index.html 본문 끝 ↑↑↑
+# ==============================
 
