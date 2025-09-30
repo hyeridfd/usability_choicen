@@ -586,41 +586,9 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     
     # ✅ 사이드바 - 예쁜 탭 UI
-with st.sidebar:
-    st.markdown("""
-    <style>
-    .menu-tab {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-top: 2rem;
-    }
-    .menu-item {
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-        padding: 0.9rem 1.2rem;
-        border-radius: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 1rem;
-    }
-    .menu-item:hover {
-        background: rgba(255, 255, 255, 0.25);
-        transform: translateX(4px);
-    }
-    .menu-item.active {
-        background: linear-gradient(90deg, #ff416c, #ff4b2b);
-        box-shadow: 0 0 10px rgba(255,75,43,0.4);
-    }
-    .menu-icon {
-        font-size: 1.3rem;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    selected_tab = st.radio("메뉴 선택", ["📝 식단 제출", "🔍 메뉴 관리"], label_visibility="collapsed")
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
 
     # 클릭에 따라 세션상태 변경
     if "active_tab" not in st.session_state:
