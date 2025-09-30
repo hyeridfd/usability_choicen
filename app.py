@@ -143,7 +143,7 @@ if "meal_type" not in st.session_state:
     st.session_state.meal_type = "식단표A"
 
 # HTML 파일을 읽어서 iframe으로 표시하는 함수
-def display_html_in_iframe():
+def render_index_html_with_injected_xlsx():
     html_path = "index.html"  # 지금 쓰시는 경로
     if not os.path.exists(html_path):
         st.error("⚠️ index.html 파일을 찾을 수 없습니다. 파일을 같은 디렉토리에 배치해주세요.")
@@ -436,4 +436,4 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        display_html_in_iframe()
+        render_index_html_with_injected_xlsx()
