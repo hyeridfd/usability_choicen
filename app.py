@@ -62,8 +62,8 @@ INDEX_HTML = r"""<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  # <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  # <title>메뉴 관리</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>메뉴 관리</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Malgun Gothic', sans-serif; background:#f5f5f5; color:#333; }
@@ -819,11 +819,11 @@ else:
     
     # 탭 2: 메뉴 관리
     elif selected_tab == "🔍 메뉴 관리":
-        st.markdown("""
-        <div class="user-header">
-            <h1>🔍 메뉴 관리</h1>
-            <p>메뉴 데이터베이스 조회 및 검색</p>
-        </div>
-        """, unsafe_allow_html=True)
+        # st.markdown("""
+        # <div class="user-header">
+        #     <h1>🔍 메뉴 관리</h1>
+        #     <p>메뉴 데이터베이스 조회 및 검색</p>
+        # </div>
+        # """, unsafe_allow_html=True)
         
-        render_index_html_with_injected_xlsx()
+        #render_index_html_with_injected_xlsx()
