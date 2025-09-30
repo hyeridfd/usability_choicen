@@ -826,4 +826,4 @@ else:
         # </div>
         # """, unsafe_allow_html=True)
         
-        #render_index_html_with_injected_xlsx()
+        render_index_html_with_injected_xlsx()
