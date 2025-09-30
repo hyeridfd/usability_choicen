@@ -531,8 +531,8 @@ def get_template_file(meal_type):
     로컬 파일이 있으면 사용하고, 없으면 GitHub에서 다운로드합니다.
     """
     template_files = {
-        "식단표A": "식단표 A.xlsx",
-        "식단표B": "식단표 B.xlsx"
+        "식단표A": "./templates/식단표 A.xlsx",
+        "식단표B": "./templates/식단표 B.xlsx"
     }
     
     filename = template_files.get(meal_type)
