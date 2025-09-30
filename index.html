@@ -120,7 +120,7 @@
     function loadData() {
       headExists(PRIMARY_XLSX).then(ok => ok ? parseXlsx(PRIMARY_XLSX)
         : headExists(FALLBACK_XLSX).then(ok2 => ok2 ? parseXlsx(FALLBACK_XLSX)
-        : showError('XLSX 파일을 찾을 수 없습니다. data/menu.xlsx를 올렸는지 확인하세요.')));
+        : showError('XLSX 파일을 찾을 수 없습니다. menu.xlsx를 올렸는지 확인하세요.')));
     }
 
     function headExists(url) {
@@ -304,4 +304,5 @@
   </script>
 </body>
 </html>
+
 
