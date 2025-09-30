@@ -590,23 +590,23 @@ with st.sidebar:
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-    # 클릭에 따라 세션상태 변경
-    if "active_tab" not in st.session_state:
-        st.session_state.active_tab = "submit"
+    # # 클릭에 따라 세션상태 변경
+    # if "active_tab" not in st.session_state:
+    #     st.session_state.active_tab = "submit"
 
-    tab_html = f"""
-    <div class="menu-tab">
-      <div class="menu-item {'active' if st.session_state.active_tab=='submit' else ''}" 
-           onclick="window.parent.postMessage({{'tab':'submit'}}, '*')">
-        <span class="menu-icon">📝</span> 식단 제출
-      </div>
-      <div class="menu-item {'active' if st.session_state.active_tab=='menu' else ''}" 
-           onclick="window.parent.postMessage({{'tab':'menu'}}, '*')">
-        <span class="menu-icon">🔍</span> 메뉴 관리
-      </div>
-    </div>
-    """
-    st.markdown(tab_html, unsafe_allow_html=True)
+    # tab_html = f"""
+    # <div class="menu-tab">
+    #   <div class="menu-item {'active' if st.session_state.active_tab=='submit' else ''}" 
+    #        onclick="window.parent.postMessage({{'tab':'submit'}}, '*')">
+    #     <span class="menu-icon">📝</span> 식단 제출
+    #   </div>
+    #   <div class="menu-item {'active' if st.session_state.active_tab=='menu' else ''}" 
+    #        onclick="window.parent.postMessage({{'tab':'menu'}}, '*')">
+    #     <span class="menu-icon">🔍</span> 메뉴 관리
+    #   </div>
+    # </div>
+    # """
+    # st.markdown(tab_html, unsafe_allow_html=True)
 
     # JS → Streamlit 세션 업데이트용 스크립트
     st.markdown("""
