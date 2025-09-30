@@ -62,8 +62,8 @@ INDEX_HTML = r"""<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>메뉴 관리</title>
+  # <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  # <title>메뉴 관리</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Malgun Gothic', sans-serif; background:#f5f5f5; color:#333; }
