@@ -403,6 +403,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+TEMPLATE_FOLDER = "templates"
+os.makedirs(TEMPLATE_FOLDER, exist_ok=True)
+
 # 커스텀 CSS
 st.markdown("""
 <style>
@@ -525,48 +528,53 @@ def get_kst_now():
     return datetime.utcnow() + timedelta(hours=9)
 
 # 템플릿 파일 다운로드 함수
-def get_template_file(meal_type):
+import requests
+
+def get_template_file(meal_type: str) -> bytes | None:
     """
-    템플릿 파일을 반환합니다.
-    로컬 파일이 있으면 사용하고, 없으면 GitHub에서 다운로드합니다.
+    템플릿 파일을 반환합니다(바이트).
+    1) templates/ 에 로컬 파일이 있으면 그걸 사용
+    2) 없으면 GitHub raw에서 다운로드 후 templates/에 저장하고 반환
     """
+    # 1) 파일명(베이스네임)만 매핑
     template_files = {
-        "식단표A": "./templates/식단표 A.xlsx",
-        "식단표B": "./templates/식단표 B.xlsx"
+        "식단표A": "식단표 A.xlsx",
+        "식단표B": "식단표 B.xlsx",
     }
-    
+
     filename = template_files.get(meal_type)
     if not filename:
         return None
-    
+
     local_path = os.path.join(TEMPLATE_FOLDER, filename)
-    
-    # 로컬에 파일이 있으면 반환
+
+    # 2) 로컬에 있으면 즉시 반환
     if os.path.exists(local_path):
         with open(local_path, "rb") as f:
             return f.read()
-    
-    # GitHub에서 다운로드 시도 (raw URL 사용)
-    github_urls = {
-        "식단표A": "https://github.com/hyeridfd/usability_choicen/blob/main/templates/%EC%8B%9D%EB%8B%A8%ED%91%9C%20A.xlsx",
-        "식단표B": "https://github.com/hyeridfd/usability_choicen/blob/main/templates/%EC%8B%9D%EB%8B%A8%ED%91%9C%20B.xlsx"
+
+    # 3) 로컬에 없으면 GitHub raw에서 다운로드
+    #   ⚠️ 반드시 raw.githubusercontent.com 사용 (blob 아님)
+    github_raw_urls = {
+        "식단표A": "https://raw.githubusercontent.com/hyeridfd/usability_choicen/main/templates/%EC%8B%9D%EB%8B%A8%ED%91%9C%20A.xlsx",
+        "식단표B": "https://raw.githubusercontent.com/hyeridfd/usability_choicen/main/templates/%EC%8B%9D%EB%8B%A8%ED%91%9C%20B.xlsx",
     }
-    
-    try:
-        import urllib.request
-        url = github_urls.get(meal_type)
-        if url:
-            with urllib.request.urlopen(url) as response:
-                data = response.read()
-                # 다운로드한 파일을 로컬에 저장
-                with open(local_path, "wb") as f:
-                    f.write(data)
-                return data
-    except Exception as e:
-        st.error(f"템플릿 다운로드 실패: {str(e)}")
+    url = github_raw_urls.get(meal_type)
+    if not url:
         return None
-    
-    return None
+
+    try:
+        r = requests.get(url, timeout=15)
+        r.raise_for_status()
+        data = r.content
+        # 4) 받은 파일을 templates/에 저장
+        with open(local_path, "wb") as f:
+            f.write(data)
+        return data
+    except Exception as e:
+        st.error(f"템플릿 다운로드 실패: {e}")
+        return None
+
     
 # 초기 상태
 if "logged_in" not in st.session_state:
